@@ -14,18 +14,19 @@ library(tiff)
 library(Rcpp)
 
 
-# How to Tweak the Results
+# How to Tweak the Results:
 
 # Resolution: Adjust the width and height parameters. Higher resolutions take linearly
-# more time to render.
-# 
+# more time to render
+
 # Camera Angle: Modify cam_elevation. 0.0 will give you a dead-on edge view,
 # while 1.5 will give you a top-down view where the gravitational lensing is
-# less pronounced but the orbit is clearer.
-# 
+# less pronounced but the orbit is clearer
+
 # Physics: In the C++ code, change r_isco to 3.0 to simulate the photon orbit
 # closer to the event horizon, mimicking the physics of a rapidly spinning (Kerr)
-# black hole rather than a static (Schwarzschild) one (r_isco=6).
+# black hole rather than a static (Schwarzschild) one (r_isco=6)
+# ISCO=Innermost Stable Circular Orbit
 
 
 # 1. Define the C++ raytracer
@@ -230,12 +231,13 @@ sourceCpp(code = cpp_code)
 
 
 # 3. Setup Camera and Render
-width <- 1920*2
-height <- 1080*2
+OVERSAMPLING=2
+width <- 1920*OVERSAMPLING
+height <- 1080*OVERSAMPLING
 cam_distance <- 50 # 20.0
 cam_elevation <- 0.15/2  # Angle above the accretion disk (radians). Try 0.4 for a higher view!
-r_isco=5.5  # to simulate a photon orbit closer to the event horizon
-# we want the ISCO (Innermost Stable Circular Orbit) to be lower
+# To simulate a photon orbit closer to the Event Horizon set a lower ISCO
+r_isco=5.5
 
 cat(sprintf("Rendering %dx%d image...\n", width, height))
 system.time({
