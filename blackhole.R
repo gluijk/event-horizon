@@ -235,9 +235,8 @@ OVERSAMPLING=2
 width <- 1920*OVERSAMPLING
 height <- 1080*OVERSAMPLING
 cam_distance <- 50 # 20.0
-cam_elevation <- 0.15/2  # Angle above the accretion disk (radians). Try 0.4 for a higher view!
-# To simulate a photon orbit closer to the Event Horizon set a lower ISCO
-r_isco=5.5
+cam_elevation <- 0.15/2  # angle above the accretion disk (radians). Try 0.4 for a higher view!
+r_isco=5.5  # to simulate a photon orbit closer to the Event Horizon set a lower ISCO
 
 cat(sprintf("Rendering %dx%d image...\n", width, height))
 system.time({
