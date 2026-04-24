@@ -327,3 +327,8 @@ for (frame in 201:400) {
     writePNG(img_data, nameout)
 }
 
+
+# MP4 Video (MPEG-4 AVC/H.264): 400 frames, add 1 loop repeat
+
+# ffmpeg -framerate 24 -i blackhole_%05d.png -i quakeiii.wav /
+# -vf "loop=1:400:0,setpts=N/(24*TB)" -c:v libx264 -crf 18 -pix_fmt yuv420p -shortest blackhole.mp4
