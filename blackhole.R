@@ -1,4 +1,4 @@
-# Black hole basic ray tracing simulation powered by Gemini Pro
+# Black hole basic ray tracing simulation
 # www.overfitting.net
 # https://www.overfitting.net/
 
