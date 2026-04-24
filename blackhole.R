@@ -30,7 +30,7 @@ library(Rcpp)
 # ISCO=Innermost Stable Circular Orbit
 
 
-# 1. Define the C++ raytracer
+# 1. Define the C++ raytracer (courtesy of Gemini Pro)
 cpp_code <- "
 #include <Rcpp.h>
 #include <cmath>
@@ -310,7 +310,7 @@ for (frame in 102:200) {
     namein=sprintf("blackhole_%05d.png", 200-frame+2)
     nameout=sprintf("blackhole_%05d.png", frame)
     img_data=readPNG(namein)
-    img_data=img_data[nrow(img_data):1,,]  # invert rows
+    img_data=img_data[nrow(img_data):1,,]  # swap rows
     img_data[2:nrow(img_data),,]=img_data[1:(nrow(img_data)-1),,]  # adjust 1 pixel shift down
     writePNG(img_data, nameout)
 }
@@ -322,7 +322,7 @@ for (frame in 201:400) {
     namein=sprintf("blackhole_%05d.png", frame-200)
     nameout=sprintf("blackhole_%05d.png", frame)
     img_data=readPNG(namein)
-    img_data=img_data[,ncol(img_data):1,]  # invert columns
+    img_data=img_data[,ncol(img_data):1,]  # swap columns
     img_data[,2:ncol(img_data),]=img_data[,1:(ncol(img_data)-1),]  # adjust 1 pixel shift right
     writePNG(img_data, nameout)
 }
