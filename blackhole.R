@@ -11,6 +11,7 @@
 
 
 library(tiff)
+library(png)
 library(Rcpp)
 
 
@@ -230,6 +231,11 @@ cat("Compiling C++ raytracer...\n")
 sourceCpp(code = cpp_code)
 
 
+
+##############################
+# STATIC EXERCISE
+
+
 # 3. Setup Camera and Render
 OVERSAMPLING=2
 width <- 1920*OVERSAMPLING
@@ -246,7 +252,7 @@ system.time({
 
 
 # 4. Save and Display the Image
-writeTIFF(img_data, "gemini_r_isco5.5_HQ.tif", bits.per.sample = 16)
+writeTIFF(img_data, "blackhole_r_isco5.5_HQ.tif", bits.per.sample = 16)
 
 # Create a blank plot area, removing margins for a clean image frame
 par(mar = c(0, 0, 0, 0), bg = "black")
@@ -254,4 +260,70 @@ plot(0, 0, type = 'n', xlim = c(0, 1), ylim = c(0, 1), axes = FALSE, xlab = '', 
 # Draw the raster matrix
 rasterImage(as.raster(img_data), 0, 0, 1, 1, interpolate = TRUE)
 cat("Done! Notice the bright, blue-shifted left side caused by the relativistic Doppler effect.\n")
+
+
+
+##############################
+# ANIMATION
+
+
+# Function to devote more frames to the most interesting and changing part of the black hole
+nonlinear_elevation <- function(N, b = 10) {
+    # b=0: linear, b>0: elevation compression
+    beta <- b / (b + 1)
+    if (abs(beta) < 1e-8) {  # beta=0 (or nearly)
+        theta=seq(-pi/2, pi/2, length.out = N+1)
+    } else {
+        x <- seq(-1, 1, length.out = N+1)
+        theta <- (pi/2) * atanh(beta * x) / atanh(beta)
+    }
+    return(theta[1:N])
+}
+
+
+# 3. Setup Camera and Render
+OVERSAMPLING=1
+width <- 1920*OVERSAMPLING
+height <- 1080*OVERSAMPLING
+cam_distance <- 50 # 20.0
+r_isco=5.5  # to simulate a photon orbit closer to the Event Horizon set a lower ISCO
+
+
+# 4. Build animation frames
+# We will only calculate 1/4 of the total 400 frames, being able to obtain the other 3/4 with simple symmetry tweaks
+NFRAMES=200
+cam_elevation=nonlinear_elevation(N=NFRAMES, b=30)  # angle above the accretion disk (radians)
+
+# Generate only 1/4 of cycle (100 frames)
+for (frame in 1:101) {  # only half the frames (100 frames) of the semi cycle need to be generated:
+    # 102 is 100 inverted, 103 is 99 inverted,...
+    theta=cam_elevation[frame]  # compressed elevation
+    name=sprintf("blackhole_%05d.png", frame)
+    print(paste0("Generating ", name, " (", round(theta*180/pi,1), "º) ..."))
+    img_data <- render_bh_cpp(width, height, cam_distance, theta, r_isco)
+    writePNG(img_data, name)
+}
+
+# Now replicate to generate second 1/4 of cycle -> we obtain thefirst 1/2 cycle (200 frames)
+for (frame in 102:200) {
+    print(frame)
+    namein=sprintf("blackhole_%05d.png", 200-frame+2)
+    nameout=sprintf("blackhole_%05d.png", frame)
+    img_data=readPNG(namein)
+    img_data=img_data[nrow(img_data):1,,]  # invert rows
+    img_data[2:nrow(img_data),,]=img_data[1:(nrow(img_data)-1),,]  # adjust 1 pixel shift down
+    writePNG(img_data, nameout)
+}
+
+# Now we have to replicate all 200 frames mirroring left to right to build the second 1/2 cycle (400 total frames)
+# This is necessary because the Doppler boosting changes the colour of the radiation left to right
+for (frame in 201:400) {
+    print(frame)
+    namein=sprintf("blackhole_%05d.png", frame-200)
+    nameout=sprintf("blackhole_%05d.png", frame)
+    img_data=readPNG(namein)
+    img_data=img_data[,ncol(img_data):1,]  # invert columns
+    img_data[,2:ncol(img_data),]=img_data[,1:(ncol(img_data)-1),]  # adjust 1 pixel shift right
+    writePNG(img_data, nameout)
+}
 
