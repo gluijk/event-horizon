@@ -332,3 +332,4 @@ for (frame in 201:400) {
 
 # ffmpeg -framerate 24 -i blackhole_%05d.png -i quakeiii.wav /
 # -vf "loop=1:400:0,setpts=N/(24*TB)" -c:v libx264 -crf 18 -pix_fmt yuv420p -shortest blackhole.mp4
+
