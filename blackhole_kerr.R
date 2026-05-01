@@ -283,16 +283,11 @@ library(Cairo)
 
 
 # --- Black hole radii functions ---
-# Gravitational radius (r_g)
-r_g <- function(M, a) { rep(M, length(a)) }
-# Schwarzschild radius (r_s)
-r_s <- function(M, a) { rep(2 * M, length(a)) }
-# Event horizon radius (r_H)
-r_H <- function(M, a) { M * (1 + sqrt(1 - a^2)) }
-# Photon orbit radius (r_ph)
-r_ph <- function(M, a) { 2 * M * (1 + cos((2/3) * acos(-a))) }
-# ISCO radius
-r_ISCO <- function(M, a) {
+r_g <- function(M, a) { rep(M, length(a)) }  # gravitational radius (r_g)
+r_s <- function(M, a) { rep(2 * M, length(a)) }  # Schwarzschild radius (r_s)
+r_H <- function(M, a) { M * (1 + sqrt(1 - a^2)) }  # event horizon radius (r_H)
+r_ph <- function(M, a) { 2 * M * (1 + cos((2/3) * acos(-a))) }  # photon orbit radius (r_ph)
+r_ISCO <- function(M, a) {  # ISCO radius
     Z1 <- 1 + (1 - a^2)^(1/3) * ((1 + a)^(1/3) + (1 - a)^(1/3))
     Z2 <- sqrt(3 * a^2 + Z1^2)
     M * (3 + Z2 - sign(a) * sqrt((3 - Z1) * (3 + Z1 + 2 * Z2)))
