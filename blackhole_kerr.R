@@ -1,5 +1,5 @@
 # Black hole basic ray tracing simulation
-# Improved version with: real cam_dist and FOV parameters, antialiasing option and Kerr (spin dependant) equations
+# Improved version with: normalised FOV, antialiasing and Kerr generalisation
 # www.overfitting.net
 # https://www.overfitting.net/
 
