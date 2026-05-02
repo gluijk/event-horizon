@@ -148,37 +148,39 @@ NumericVector render_bh_cpp_kerr_AA(int width, int height, double cam_dist, doub
                     if (r < r_H * 1.01) break;  // early stop 1% safety margin near event horizon (visually indistinguishable)
                     if (r > cam_dist * 2.0) break;  // 2.0 factor to give up on a photon that is flying away into deep space
                     
-                    if (pos[2] * z_prev <= 0 && step > 0) {
+                    if (pos[2] * z_prev <= 0 && step > 0) {  // sign change in z: the ray has passed through z = 0
                         double t = std::abs(z_prev) / (std::abs(z_prev) + std::abs(pos[2]) + 1e-8);
-                        double cross_x = pos[0] - vel[0]*dt*(1.0-t);
-                        double cross_y = pos[1] - vel[1]*dt*(1.0-t);
-                        double cross_r = std::sqrt(cross_x*cross_x + cross_y*cross_y);
+                        // NOTE: hit_x, hit_y and hit_r are coming from the crossing point between
+                        // the photon trajectory (ray segment between two integration steps) and the equatorial plane z=0
+                        double hit_x = pos[0] - vel[0]*dt*(1.0-t);
+                        double hit_y = pos[1] - vel[1]*dt*(1.0-t);
+                        double hit_r = std::sqrt(hit_x*hit_x + hit_y*hit_y);
                         
-                        if (cross_r > r_ISCO && cross_r < r_out) {
+                        if (hit_r > r_ISCO && hit_r < r_out) {
                             // Keplerian velocity: Omega = 1 / (r^1.5 + a) naturally handles the sign of a
-                            double omega = 1.0 / (std::pow(cross_r, 1.5)/std::sqrt(M) + a);
-                            double vk = omega * cross_r;
+                            double omega = 1.0 / (std::pow(hit_r, 1.5)/std::sqrt(M) + a);
+                            double vk = omega * hit_r;
                             
-                            double V_disk[3] = {-vk * cross_y / cross_r, vk * cross_x / cross_r, 0.0};
+                            double V_disk[3] = {-vk * hit_y / hit_r, vk * hit_x / hit_r, 0.0};
                             double n[3] = {-vel[0], -vel[1], -vel[2]};
                             
                             double V_dot_n = dot(V_disk, n);
                             double g = std::sqrt(1.0 - vk*vk) / (1.0 - V_dot_n);
                             
                             // Redshift approx
-                            double delta = cross_r*cross_r - 2.0*M*cross_r + a*a;
-                            double sigma = cross_r*cross_r; 
+                            double delta = hit_r*hit_r - 2.0*M*hit_r + a*a;
+                            double sigma = hit_r*hit_r; 
                             double red_grav = std::sqrt(delta / sigma);
                             g *= red_grav;
                             
                             if (glow) {  // orangish colours
-                                double base_I = 150.0 / (cross_r * cross_r);  // 1/r2 law
+                                double base_I = 150.0 / (hit_r * hit_r);  // 1/r2 law
                                 double I_obs = base_I * std::pow(g, 4.0);
                                 color[0] = std::min(1.0, I_obs * 1.0 * std::pow(g, 1.5)); // Red
                                 color[1] = std::min(1.0, I_obs * 0.6 * std::pow(g, 3.0)); // Green
                                 color[2] = std::min(1.0, I_obs * 0.2 * std::pow(g, 4.5)); // Blue
                             } else {  // bluish/orangish colours
-                                double base_I = 200.0 / (std::pow(cross_r, 3.0));  // 1/r3 law
+                                double base_I = 200.0 / (std::pow(hit_r, 3.0));  // 1/r3 law
                                 double I_obs = base_I * std::pow(g, 4.0);
                                 color[0] = std::pow(std::min(1.0, I_obs * std::pow(g, 1.2)), 0.5);
                                 color[1] = std::pow(std::min(1.0, I_obs * std::pow(g, 2.5)), 0.5);
@@ -187,7 +189,7 @@ NumericVector render_bh_cpp_kerr_AA(int width, int height, double cam_dist, doub
     
                             // Optional: Add grid rings for depth texture
                             // METHOD 1: just add rings
-                            if (std::fmod(cross_r, 1) < 0.1) {  // frequency, pulse width
+                            if (std::fmod(hit_r, 1) < 0.1) {  // frequency, pulse width
                                 color[0] *= 0.4; color[1] *= 0.4; color[2] *= 0.4;
                             }
                             break;  // Stop tracking photon after it hits the opaque disk
@@ -249,15 +251,15 @@ sourceCpp(code = cpp_code)
 
 
 # 3. Setup Camera and Render
-OVERSAMPLING=1
+OVERSAMPLING=4
 width <- 1920*OVERSAMPLING
 height <- 1080*OVERSAMPLING
 cam_distance <- 30 # 20.0
 cam_elevation <- 0.15/2  # angle above the accretion disk (radians). Try 0.4 for a higher view!
 
 # Tests
-img_data <- render_bh_cpp_kerr_AA(width, height, cam_distance, cam_elevation, M=1, glow=0, AA=1)
-writeTIFF(img_data, "blackhole.tif", bits.per.sample = 16)
+img_data <- render_bh_cpp_kerr_AA(width, height, cam_distance, cam_elevation, a=0.6, glow=1, AA=1, M=1)
+writeTIFF(img_data, "blackhole_a0.6_GARGANTUA.tif", bits.per.sample = 16)
 
 
 # 4. Build animation frames
