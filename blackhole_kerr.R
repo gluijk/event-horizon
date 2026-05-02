@@ -68,7 +68,7 @@ NumericVector render_bh_cpp_kerr_AA(int width, int height, double cam_dist, doub
     // NOTE: user input spin parameter is assumed to be normalized a* in the {-1,+1} dimensionless range
     // while the formulas are referred to a in the {−M,+M}} units range
     // a* = a / M -> a = a* * M
-    a = a * M;  // with this scaling we give a units of M which all used formulas expect
+    a = a * M;  // with this scaling we give a units of M (length) which all used formulas expect
 
     NumericVector img(width * height * 3);
     
@@ -86,11 +86,11 @@ NumericVector render_bh_cpp_kerr_AA(int width, int height, double cam_dist, doub
     std::uniform_real_distribution<double> dist(0.0, 1.0);
 
     // Calculate event horizon
-    double r_H = M + std::sqrt(std::max(0.0, M*M - a*a));  // independent of the sign of a
+    double r_H = M + std::sqrt(std::max(0.0, M*M - a*a/(M*M)));  // independent of the sign of a
 
     // Calculate ISCO for Kerr (formula by Bardeen et al. 1972)
     // if a=0 (Schwarzschild) -> Z1=3, Z2=3, r_ISCO=6
-    double Z1 = 1.0 + std::pow(1.0 - a*a/M*M, 1.0/3.0) * (std::pow(1.0 + a/M, 1.0/3.0) + std::pow(1.0 - a/M, 1.0/3.0));
+    double Z1 = 1.0 + std::pow(1.0 - a*a/(M*M), 1.0/3.0) * (std::pow(1.0 + a/M, 1.0/3.0) + std::pow(1.0 - a/M, 1.0/3.0));
     double Z2 = std::sqrt(3.0 * a*a/(M*M) + Z1*Z1);
     double r_ISCO = M * (3.0 + Z2 - sgn(a) * std::sqrt((3.0 - Z1)*(3.0 + Z1 + 2.0*Z2)));  // sgn(a) accounts for prograde/retrograde
 
@@ -188,11 +188,11 @@ NumericVector render_bh_cpp_kerr_AA(int width, int height, double cam_dist, doub
                                 color[2] = std::pow(std::min(1.0, I_obs * std::pow(g, 4.0)), 0.5);
                             }
     
-                            // Optional: Add grid rings for depth texture
+                            // Optional: add grid rings for depth texture
                             if (rings && std::fmod(hit_r, 1) < 0.1) {  // frequency, pulse width
                                 color[0] *= 0.3; color[1] *= 0.3; color[2] *= 0.3;
                             }
-                            break;  // Stop tracking photon after it hits the opaque disk
+                            break;  // stop tracking photon after it hits the opaque disk
                         }
                     }
                     
@@ -251,18 +251,18 @@ sourceCpp(code = cpp_code)
 
 
 # 3. Setup Camera and Render
-OVERSAMPLING=4
+OVERSAMPLING=1/2
 width <- 1920*OVERSAMPLING
 height <- 1080*OVERSAMPLING
 cam_dist <- 30 # 20.0
 cam_elev <- 0.15/2  # angle above the accretion disk (radians). Try 0.4 for a higher view!
-cam_elev <- 0.15/6  # angle above the accretion disk (radians). Try 0.4 for a higher view!
+cam_elev <- 0.15/3  # angle above the accretion disk (radians). Try 0.4 for a higher view!
 
 # Tests
-img_data <- render_bh_cpp_kerr_AA(width, height, cam_dist, cam_elev,
-                                  a=0.25, M=1.5,
-                                  glow=0, rings=0, AA=1)
-writeTIFF(img_data, "blackhole_test.tif", bits.per.sample = 16)
+img_data <- render_bh_cpp_kerr_AA(width*1.2, height, cam_dist=30, cam_elev,
+                                  a=-0.6, M=1.5,
+                                  glow=0, rings=1, AA=1)
+writeTIFF(img_data, "blackhole_test_a-0.99.tif", bits.per.sample = 16)
 
 
 # 4. Build animation frames
