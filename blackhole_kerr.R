@@ -21,7 +21,7 @@ library(Rcpp)
 # Resolution: Adjust the width and height parameters. Higher resolutions take linearly
 # more time to render
 
-# Camera Angle: Modify cam_elevation. 0.0 will give you a dead-on edge view,
+# Camera Angle: Modify cam_elev. 0.0 will give you a dead-on edge view,
 # while 1.5 will give you a top-down view where the gravitational lensing is
 # less pronounced but the orbit is clearer
 
@@ -62,8 +62,9 @@ inline double sgn(double val) {
 }
 
 // [[Rcpp::export]]
-NumericVector render_bh_cpp_kerr_AA(int width, int height, double cam_dist, double cam_angle,
-        double a=0.0, int glow=1, int AA=1, double M=1.0) {  // we usually won't modify M
+NumericVector render_bh_cpp_kerr_AA(int width, int height, double cam_dist, double cam_elev,
+        double a=0.0, double M=1.0,
+        int glow=1, int rings=1, int AA=1) {
     // NOTE: user input spin parameter is assumed to be normalized a* in the {-1,+1} dimensionless range
     // while the formulas are referred to a in the {−M,+M}} units range
     // a* = a / M -> a = a* * M
@@ -73,8 +74,8 @@ NumericVector render_bh_cpp_kerr_AA(int width, int height, double cam_dist, doub
     
     // Camera setup
     double cx = 0.0;
-    double cy = -cam_dist * std::cos(cam_angle);
-    double cz = cam_dist * std::sin(cam_angle);
+    double cy = -cam_dist * std::cos(cam_elev);
+    double cz = cam_dist * std::sin(cam_elev);
     
     double dt = 0.1;           
     double r_out = 20.0;  // fixed size of outer radius for accretion disk
@@ -188,9 +189,8 @@ NumericVector render_bh_cpp_kerr_AA(int width, int height, double cam_dist, doub
                             }
     
                             // Optional: Add grid rings for depth texture
-                            // METHOD 1: just add rings
-                            if (std::fmod(hit_r, 1) < 0.1) {  // frequency, pulse width
-                                color[0] *= 0.4; color[1] *= 0.4; color[2] *= 0.4;
+                            if (rings && std::fmod(hit_r, 1) < 0.1) {  // frequency, pulse width
+                                color[0] *= 0.3; color[1] *= 0.3; color[2] *= 0.3;
                             }
                             break;  // Stop tracking photon after it hits the opaque disk
                         }
@@ -254,12 +254,15 @@ sourceCpp(code = cpp_code)
 OVERSAMPLING=4
 width <- 1920*OVERSAMPLING
 height <- 1080*OVERSAMPLING
-cam_distance <- 30 # 20.0
-cam_elevation <- 0.15/2  # angle above the accretion disk (radians). Try 0.4 for a higher view!
+cam_dist <- 30 # 20.0
+cam_elev <- 0.15/2  # angle above the accretion disk (radians). Try 0.4 for a higher view!
+cam_elev <- 0.15/6  # angle above the accretion disk (radians). Try 0.4 for a higher view!
 
 # Tests
-img_data <- render_bh_cpp_kerr_AA(width, height, cam_distance, cam_elevation, a=0.6, glow=1, AA=1, M=1)
-writeTIFF(img_data, "blackhole_a0.6_GARGANTUA.tif", bits.per.sample = 16)
+img_data <- render_bh_cpp_kerr_AA(width, height, cam_dist, cam_elev,
+                                  a=0.25, M=1.5,
+                                  glow=0, rings=0, AA=1)
+writeTIFF(img_data, "blackhole_test.tif", bits.per.sample = 16)
 
 
 # 4. Build animation frames
@@ -267,7 +270,7 @@ frame=1
 for (a in seq(from=-0.98, to=0.98, by=0.02)) {
     name=sprintf("blackhole_%05d.png", frame)
     print(paste0(name, ": ", sprintf("Rendering %dx%d image with a=%f...\n", width, height, a)))
-    img_data <- render_bh_cpp_kerr_AA(width, height, cam_distance, cam_elevation, a=a, glow=0)
+    img_data <- render_bh_cpp_kerr_AA(width, height, cam_dist, cam_elev, a=a, glow=0)
     writePNG(img_data, name)
     frame=frame+1
 }
