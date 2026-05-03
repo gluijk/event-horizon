@@ -251,18 +251,18 @@ sourceCpp(code = cpp_code)
 
 
 # 3. Setup Camera and Render
-OVERSAMPLING=2
+OVERSAMPLING=1
 width <- 1920*OVERSAMPLING
 height <- 1080*OVERSAMPLING
 cam_dist <- 30 # 20.0
-cam_elev <- 0.15/2  # angle above the accretion disk (radians). Try 0.4 for a higher view!
+#cam_elev <- 0.15/2  # angle above the accretion disk (radians). Try 0.4 for a higher view!
 cam_elev <- 0.15/3  # angle above the accretion disk (radians). Try 0.4 for a higher view!
 
 # Tests
 img_data <- render_bh_cpp_kerr_AA(width*1.2, height, cam_dist, cam_elev,
-                                  a=-0.99, M=1.5,
+                                  a=-0.6, M=1.5,
                                   glow=1, rings=0, AA=1)
-writeTIFF(img_data, "blackhole_a-0.99.tif", bits.per.sample = 16)
+writeTIFF(img_data, "blackhole_a-0.6.tif", bits.per.sample = 16)
 
 
 # 4. Build animation frames
