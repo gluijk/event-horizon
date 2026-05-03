@@ -70,13 +70,15 @@ NumericVector render_bh_cpp_kerr_AA(
 
     // cam_dist: camera distance in M units
     // cam_elev: camera elevation in radians
-    // fov_scale: VFOV = 2 * atan(0.6 / 2) ~33.4º / HFOV = 2 * atan(0.6 * aspect_ratio / 2)
+    // fov_scale: viewport's physical full height relative to a focal length of 1
+    //            VFOV = 2 * atan(0.6 / 2) ~33.4º / HFOV = 2 * atan(0.6 * aspect_ratio / 2)
     // a: user input spin parameter is assumed to be normalized a* in the {-1,+1} dimensionless range
     //    while the formulas are referred to a in the {−M,+M} units range
     //    a* = a / M -> a = a* * M
     // M: black hole mass in length units
     // r_out_accretion: size of outer radius for accretion disk in M units
-    // glow: boolean to choose colour palette, rings: boolean to add rings on accretio disk
+    // glow: boolean to choose colour palette
+    // rings: boolean to add rings on accretion disk
     // AA: number of antialiasing pixels (AA=1 means no antialiasing)
 
     a = a * M;  // scaling to give a units of M (length) which all used formulas expect
