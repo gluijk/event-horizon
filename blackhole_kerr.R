@@ -1,5 +1,5 @@
 # Black hole basic ray tracing simulation
-# Improved version with: normalised FOV, antialiasing and Kerr generalisation
+# Improved version with: normalised FOV, antialiasing and approximated Kerr generalisation
 # www.overfitting.net
 # https://www.overfitting.net/2026/04/simulando-agujeros-negros.html
 
