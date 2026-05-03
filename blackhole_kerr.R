@@ -86,7 +86,7 @@ NumericVector render_bh_cpp_kerr_AA(int width, int height, double cam_dist, doub
     std::uniform_real_distribution<double> dist(0.0, 1.0);
 
     // Calculate event horizon
-    double r_H = M + std::sqrt(std::max(0.0, M*M - a*a/(M*M)));  // independent of the sign of a
+    double r_H = M + std::sqrt(std::max(0.0, M*M - a*a));  // independent of the sign of a
 
     // Calculate ISCO for Kerr (formula by Bardeen et al. 1972)
     // if a=0 (Schwarzschild) -> Z1=3, Z2=3, r_ISCO=6
@@ -251,7 +251,7 @@ sourceCpp(code = cpp_code)
 
 
 # 3. Setup Camera and Render
-OVERSAMPLING=1/2
+OVERSAMPLING=2
 width <- 1920*OVERSAMPLING
 height <- 1080*OVERSAMPLING
 cam_dist <- 30 # 20.0
@@ -259,10 +259,10 @@ cam_elev <- 0.15/2  # angle above the accretion disk (radians). Try 0.4 for a hi
 cam_elev <- 0.15/3  # angle above the accretion disk (radians). Try 0.4 for a higher view!
 
 # Tests
-img_data <- render_bh_cpp_kerr_AA(width*1.2, height, cam_dist=30, cam_elev,
-                                  a=-0.6, M=1.5,
-                                  glow=0, rings=1, AA=1)
-writeTIFF(img_data, "blackhole_test_a-0.99.tif", bits.per.sample = 16)
+img_data <- render_bh_cpp_kerr_AA(width*1.2, height, cam_dist, cam_elev,
+                                  a=-0.99, M=1.5,
+                                  glow=1, rings=0, AA=1)
+writeTIFF(img_data, "blackhole_a-0.99.tif", bits.per.sample = 16)
 
 
 # 4. Build animation frames
