@@ -28,7 +28,7 @@ library(Rcpp)
 
 # 1. Define the C++ raytracer (courtesy of Gemini Pro)
 
-# BASIC RAYTRACER + KERR BLACK HOLE APPROX + AA: render_bh_cpp_kerr_AA()
+# BASIC RAYTRACER + KERR BLACK HOLE APPROX + AA: render_bh_cpp_kerr()
 # ChatGPT verdict: this is a visually plausible renderer, not a physically accurate Kerr ray tracer
 cpp_code <- "
 #include <Rcpp.h>
@@ -62,7 +62,7 @@ inline double sgn(double val) {
 }
 
 // [[Rcpp::export]]
-NumericVector render_bh_cpp_kerr_AA(
+NumericVector render_bh_cpp_kerr(
         int width=1920, int height=1080,                                    // output resolution in pixels
         double cam_dist=50, double cam_elev=0.075, double FOV_scale = 0.6,  // camera parameters
         double a_star=0.0, double M=1.0, double r_out_accretion = 20.0,     // black hole parameters
@@ -257,7 +257,7 @@ sourceCpp(code = cpp_code)
 
 
 # Quick default black hole test
-img_data <- render_bh_cpp_kerr_AA()
+img_data <- render_bh_cpp_kerr()
 writeTIFF(img_data, "blackhole_default.tif", bits.per.sample = 16)
 
 
@@ -279,7 +279,7 @@ frame=1
 for (a in seq(from=-0.98, to=0.98, by=0.02)) {
     name=sprintf("blackhole_%05d.png", frame)
     cat(paste0(name, ": ", sprintf("rendering %dx%d image with a=%f...\n", width, height, a)))
-    img_data <- render_bh_cpp_kerr_AA(width, height, cam_dist, cam_elev, FOV_scale=1.2, a_star=a, glow=0)
+    img_data <- render_bh_cpp_kerr(width, height, cam_dist, cam_elev, FOV_scale=1.2, a_star=a, glow=0)
     writePNG(img_data, name)
     frame=frame+1
 }
