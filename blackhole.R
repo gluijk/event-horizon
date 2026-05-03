@@ -1,6 +1,6 @@
 # Black hole basic ray tracing simulation
 # www.overfitting.net
-# https://www.overfitting.net/
+# https://www.overfitting.net/2026/04/simulando-agujeros-negros.html
 
 # Other resources:
 # History of first black hole simulation:
@@ -78,7 +78,7 @@ NumericVector render_bh_cpp(int width, int height, double cam_dist, double cam_a
             
             // Map pixel to screen space coordinates
             double aspect_ratio = (double)width / (double)height;
-            double u = (double(i) / width - 0.5) * fov_scale * aspect_ratio;
+            double u_scr = (double(i) / width - 0.5) * fov_scale * aspect_ratio;
             // Invert Y so the top of the image renders correctly
             double v_scr = -(double(j) / height - 0.5) * fov_scale;
             
@@ -93,9 +93,9 @@ NumericVector render_bh_cpp(int width, int height, double cam_dist, double cam_a
             
             // Initial photon velocity (towards screen pixel)
             double vel[3] = {
-                cdir[0] + u*right[0]/cam_dist + v_scr*up[0]/cam_dist,
-                cdir[1] + u*right[1]/cam_dist + v_scr*up[1]/cam_dist,
-                cdir[2] + u*right[2]/cam_dist + v_scr*up[2]/cam_dist
+                cdir[0] + u_scr*right[0]/cam_dist + v_scr*up[0]/cam_dist,
+                cdir[1] + u_scr*right[1]/cam_dist + v_scr*up[1]/cam_dist,
+                cdir[2] + u_scr*right[2]/cam_dist + v_scr*up[2]/cam_dist
             };
             normalize(vel);
             
@@ -327,9 +327,21 @@ for (frame in 201:400) {
     writePNG(img_data, nameout)
 }
 
+# Add background
+bg=readPNG("background.png")
+for (frame in 1:400) {
+    print(frame)
+    namein=sprintf("blackhole_%05d.png", frame)
+    nameout=sprintf("blackholebg_%05d.png", frame)
+    img_data=readPNG(namein)
+    indices=which(bg>img_data)
+    img_data[indices]=bg[indices]
+    writePNG(img_data, nameout)
+}
+
 
 # MP4 Video (MPEG-4 AVC/H.264): 400 frames, add 1 loop repeat
 
-# ffmpeg -framerate 24 -i blackhole_%05d.png -i quakeiii.wav /
+# ffmpeg -framerate 24 -i blackholebg_%05d.png -i quakeiii.wav /
 # -vf "loop=1:400:0,setpts=N/(24*TB)" -c:v libx264 -crf 18 -pix_fmt yuv420p -shortest blackhole.mp4
 
