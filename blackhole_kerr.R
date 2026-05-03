@@ -62,13 +62,24 @@ inline double sgn(double val) {
 }
 
 // [[Rcpp::export]]
-NumericVector render_bh_cpp_kerr_AA(int width, int height, double cam_dist, double cam_elev,
-        double a=0.0, double M=1.0,
-        int glow=1, int rings=1, int AA=1) {
-    // NOTE: user input spin parameter is assumed to be normalized a* in the {-1,+1} dimensionless range
-    // while the formulas are referred to a in the {−M,+M}} units range
-    // a* = a / M -> a = a* * M
-    a = a * M;  // with this scaling we give a units of M (length) which all used formulas expect
+NumericVector render_bh_cpp_kerr_AA(
+        int width=1920, int height=1080,                                    // output resolution in pixels
+        double cam_dist=50, double cam_elev=0.075, double fov_scale = 0.6,  // camera parameters
+        double a=0.0, double M=1.0, double r_out_accretion = 20.0,          // black hole parameters
+        int glow=1, int rings=1, int AA=1) {                                // plot parameters
+
+    // cam_dist: camera distance in M units
+    // cam_elev: camera elevation in radians
+    // fov_scale: VFOV = 2 * atan(0.6 / 2) ~33.4º / HFOV = 2 * atan(0.6 * aspect_ratio / 2)
+    // a: user input spin parameter is assumed to be normalized a* in the {-1,+1} dimensionless range
+    //    while the formulas are referred to a in the {−M,+M} units range
+    //    a* = a / M -> a = a* * M
+    // M: black hole mass in length units
+    // r_out_accretion: size of outer radius for accretion disk in M units
+    // glow: boolean to choose colour palette, rings: boolean to add rings on accretio disk
+    // AA: number of antialiasing pixels (AA=1 means no antialiasing)
+
+    a = a * M;  // scaling to give a units of M (length) which all used formulas expect
 
     NumericVector img(width * height * 3);
     
@@ -78,17 +89,15 @@ NumericVector render_bh_cpp_kerr_AA(int width, int height, double cam_dist, doub
     double cz = cam_dist * std::sin(cam_elev);
     
     double dt = 0.1;           
-    double r_out = 20.0;  // fixed size of outer radius for accretion disk
-    double fov_scale = 1.2;  // fixed VFOV = 2 * atan(1.2 / 2) ~61.9º / HFOV = 2 * atan(1.2 * aspect_ratio / 2)
 
     // Antialiasing random generator
     std::mt19937 rng(42); // seed
     std::uniform_real_distribution<double> dist(0.0, 1.0);
 
-    // Calculate event horizon
+    // Calculate Event horizon
     double r_H = M + std::sqrt(std::max(0.0, M*M - a*a));  // independent of the sign of a
 
-    // Calculate ISCO for Kerr (formula by Bardeen et al. 1972)
+    // Calculate ISCO for Kerr (formula by Bardeen et al, 1972)
     // if a=0 (Schwarzschild) -> Z1=3, Z2=3, r_ISCO=6
     double Z1 = 1.0 + std::pow(1.0 - a*a/(M*M), 1.0/3.0) * (std::pow(1.0 + a/M, 1.0/3.0) + std::pow(1.0 - a/M, 1.0/3.0));
     double Z2 = std::sqrt(3.0 * a*a/(M*M) + Z1*Z1);
@@ -157,7 +166,7 @@ NumericVector render_bh_cpp_kerr_AA(int width, int height, double cam_dist, doub
                         double hit_y = pos[1] - vel[1]*dt*(1.0-t);
                         double hit_r = std::sqrt(hit_x*hit_x + hit_y*hit_y);
                         
-                        if (hit_r > r_ISCO && hit_r < r_out) {
+                        if (hit_r > r_ISCO && hit_r < r_out_accretion) {
                             // Keplerian velocity: Omega = 1 / (r^1.5 + a) naturally handles the sign of a
                             double omega = 1.0 / (std::pow(hit_r, 1.5)/std::sqrt(M) + a);
                             double vk = omega * hit_r;
@@ -245,32 +254,29 @@ cat("Compiling C++ raytracer...\n")
 sourceCpp(code = cpp_code)
 
 
+# Quick default black hole test
+img_data <- render_bh_cpp_kerr_AA()
+writeTIFF(img_data, "blackhole_default.tif", bits.per.sample = 16)
+
 
 ##############################
 # VARYING SPIN ANIMATION
 
 
-# 3. Setup Camera and Render
+# 3. Setup Camera
 OVERSAMPLING=1
 width <- 1920*OVERSAMPLING
 height <- 1080*OVERSAMPLING
-cam_dist <- 30 # 20.0
-#cam_elev <- 0.15/2  # angle above the accretion disk (radians). Try 0.4 for a higher view!
-cam_elev <- 0.15/3  # angle above the accretion disk (radians). Try 0.4 for a higher view!
-
-# Tests
-img_data <- render_bh_cpp_kerr_AA(width*1.2, height, cam_dist, cam_elev,
-                                  a=-0.6, M=1.5,
-                                  glow=1, rings=0, AA=1)
-writeTIFF(img_data, "blackhole_a-0.6.tif", bits.per.sample = 16)
+cam_dist <- 30
+cam_elev <- 0.15/3  # angle above the accretion disk (radians)
 
 
 # 4. Build animation frames
 frame=1
 for (a in seq(from=-0.98, to=0.98, by=0.02)) {
     name=sprintf("blackhole_%05d.png", frame)
-    print(paste0(name, ": ", sprintf("Rendering %dx%d image with a=%f...\n", width, height, a)))
-    img_data <- render_bh_cpp_kerr_AA(width, height, cam_dist, cam_elev, a=a, glow=0)
+    cat(paste0(name, ": ", sprintf("rendering %dx%d image with a=%f...\n", width, height, a)))
+    img_data <- render_bh_cpp_kerr_AA(width, height, cam_dist, cam_elev, fov_scale=1.2, a=a, glow=0)
     writePNG(img_data, name)
     frame=frame+1
 }
