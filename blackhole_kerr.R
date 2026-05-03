@@ -64,19 +64,19 @@ inline double sgn(double val) {
 // [[Rcpp::export]]
 NumericVector render_bh_cpp_kerr_AA(
         int width=1920, int height=1080,                                    // output resolution in pixels
-        double cam_dist=50, double cam_elev=0.075, double fov_scale = 0.6,  // camera parameters
+        double cam_dist=50, double cam_elev=0.075, double FOV_scale = 0.6,  // camera parameters
         double a=0.0, double M=1.0, double r_out_accretion = 20.0,          // black hole parameters
         int glow=1, int rings=1, int AA=1) {                                // plot parameters
 
     // cam_dist: camera distance in M units
     // cam_elev: camera elevation in radians
-    // fov_scale: viewport's physical full height relative to a focal length of 1
+    // FOV_scale: viewport's physical full height relative to a focal length of 1
     //            VFOV = 2 * atan(0.6 / 2) ~33.4º / HFOV = 2 * atan(0.6 * aspect_ratio / 2)
     // a: user input spin parameter is assumed to be normalized a* in the {-1,+1} dimensionless range
     //    while the formulas are referred to a in the {−M,+M} units range
     //    a* = a / M -> a = a* * M
     // M: black hole mass in length units
-    // r_out_accretion: size of outer radius for accretion disk in M units
+    // r_out_accretion: size of outer radius for accretion disk in length units
     // glow: boolean to choose colour palette
     // rings: boolean to add rings on accretion disk
     // AA: number of antialiasing pixels (AA=1 means no antialiasing)
@@ -138,9 +138,9 @@ NumericVector render_bh_cpp_kerr_AA(
                 double offset_v = (AA == 1) ? 0.5 : dist(rng);
                 
                 // Map pixel to screen space coordinates
-                double u_scr = (double(i + offset_u) / width - 0.5) * fov_scale * aspect_ratio;
+                double u_scr = (double(i + offset_u) / width - 0.5) * FOV_scale * aspect_ratio;
                 // Invert Y so the top of the image renders correctly
-                double v_scr = -(double(j + offset_v) / height - 0.5) * fov_scale;
+                double v_scr = -(double(j + offset_v) / height - 0.5) * FOV_scale;
 
                 double pos[3] = {cx, cy, cz};
                 double vel[3] = {
@@ -261,6 +261,7 @@ img_data <- render_bh_cpp_kerr_AA()
 writeTIFF(img_data, "blackhole_default.tif", bits.per.sample = 16)
 
 
+
 ##############################
 # VARYING SPIN ANIMATION
 
@@ -278,7 +279,7 @@ frame=1
 for (a in seq(from=-0.98, to=0.98, by=0.02)) {
     name=sprintf("blackhole_%05d.png", frame)
     cat(paste0(name, ": ", sprintf("rendering %dx%d image with a=%f...\n", width, height, a)))
-    img_data <- render_bh_cpp_kerr_AA(width, height, cam_dist, cam_elev, fov_scale=1.2, a=a, glow=0)
+    img_data <- render_bh_cpp_kerr_AA(width, height, cam_dist, cam_elev, FOV_scale=1.2, a=a, glow=0)
     writePNG(img_data, name)
     frame=frame+1
 }
