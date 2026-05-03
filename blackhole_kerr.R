@@ -65,23 +65,23 @@ inline double sgn(double val) {
 NumericVector render_bh_cpp_kerr_AA(
         int width=1920, int height=1080,                                    // output resolution in pixels
         double cam_dist=50, double cam_elev=0.075, double FOV_scale = 0.6,  // camera parameters
-        double a=0.0, double M=1.0, double r_out_accretion = 20.0,          // black hole parameters
+        double a_star=0.0, double M=1.0, double r_out_accretion = 20.0,     // black hole parameters
         int glow=1, int rings=1, int AA=1) {                                // plot parameters
 
     // cam_dist: camera distance in M units
     // cam_elev: camera elevation in radians
     // FOV_scale: viewport's physical full height relative to a focal length of 1
     //            VFOV = 2 * atan(0.6 / 2) ~33.4º / HFOV = 2 * atan(0.6 * aspect_ratio / 2)
-    // a: user input spin parameter is assumed to be normalized a* in the {-1,+1} dimensionless range
-    //    while the formulas are referred to a in the {−M,+M} units range
-    //    a* = a / M -> a = a* * M
+    // a_star: user input spin parameter is assumed to be normalized a* in the {-1,+1} dimensionless range
+    //         while the formulas are referred to a in the {−M,+M} units range
+    //         a* = a / M -> a = a* * M
     // M: black hole mass in length units
     // r_out_accretion: size of outer radius for accretion disk in length units
     // glow: boolean to choose colour palette
     // rings: boolean to add rings on accretion disk
     // AA: number of antialiasing pixels (AA=1 means no antialiasing)
 
-    a = a * M;  // scaling to give a units of M (length) which all used formulas expect
+    double a = a_star * M;  // scaling to give a units of M (length) which all used formulas expect
 
     NumericVector img(width * height * 3);
     
@@ -111,7 +111,7 @@ NumericVector render_bh_cpp_kerr_AA(
         : \"Kerr black hole: \";
     Rcpp::Rcout << label
                 << \"M=\" << M
-                << \", a*=\" << a / M
+                << \", a*=\" << a_star
                 << \" -> a=\" << a
                 << \", r_H=\" << r_H
                 << \", r_ISCO=\" << r_ISCO
@@ -271,7 +271,7 @@ OVERSAMPLING=1
 width <- 1920*OVERSAMPLING
 height <- 1080*OVERSAMPLING
 cam_dist <- 30
-cam_elev <- 0.15/3  # angle above the accretion disk (radians)
+cam_elev <- 0.075  # angle above the accretion disk (radians)
 
 
 # 4. Build animation frames
@@ -279,7 +279,7 @@ frame=1
 for (a in seq(from=-0.98, to=0.98, by=0.02)) {
     name=sprintf("blackhole_%05d.png", frame)
     cat(paste0(name, ": ", sprintf("rendering %dx%d image with a=%f...\n", width, height, a)))
-    img_data <- render_bh_cpp_kerr_AA(width, height, cam_dist, cam_elev, FOV_scale=1.2, a=a, glow=0)
+    img_data <- render_bh_cpp_kerr_AA(width, height, cam_dist, cam_elev, FOV_scale=1.2, a_star=a, glow=0)
     writePNG(img_data, name)
     frame=frame+1
 }
