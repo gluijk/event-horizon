@@ -62,9 +62,9 @@ NumericVector render_bh_cpp(int width, int height, double cam_dist, double cam_a
     NumericVector img(width * height * 3);
     
     // Camera setup (cam_angle in radians. 0 = edge-on, M_PI/2 = top-down)
+    double cx = 0.0;
     double cy = -cam_dist * std::cos(cam_angle);
     double cz = cam_dist * std::sin(cam_angle);
-    double cx = 0.0;
     
     // Ray tracing parameters
     double dt = 0.05;         // Integration step size
@@ -237,7 +237,7 @@ sourceCpp(code = cpp_code)
 
 
 # 3. Setup Camera and Render
-OVERSAMPLING=2
+OVERSAMPLING=1
 width <- 1920*OVERSAMPLING
 height <- 1080*OVERSAMPLING
 cam_distance <- 50 # 20.0
@@ -256,7 +256,7 @@ writeTIFF(img_data, "blackhole_r_isco5.5_HQ.tif", bits.per.sample = 16)
 
 # Create a blank plot area, removing margins for a clean image frame
 par(mar = c(0, 0, 0, 0), bg = "black")
-plot(0, 0, type = 'n', xlim = c(0, 1), ylim = c(0, 1), axes = FALSE, xlab = '', ylab = '')
+plot(0, 0, type = 'n', xlim = c(0, 1), ylim = c(0, 1), axes = FALSE, xlab = '', ylab = '', asp=height/width)
 # Draw the raster matrix
 rasterImage(as.raster(img_data), 0, 0, 1, 1, interpolate = TRUE)
 cat("Done! Notice the bright, blue-shifted left side caused by the relativistic Doppler effect.\n")
