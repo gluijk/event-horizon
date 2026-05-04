@@ -78,7 +78,7 @@ NumericVector render_bh_cpp_kerr(
     // M: black hole mass in length units
     // r_out_accretion: size of outer radius for accretion disk in length units
     // glow: boolean to choose colour palette
-    // rings: boolean to add rings on accretion disk
+    // rings: boolean to add rings on the accretion disk
     // AA: number of antialiasing pixels (AA=1 means no antialiasing)
 
     double a = a_star * M;  // scaling to give a units of M (length) which all used formulas expect
@@ -259,6 +259,9 @@ sourceCpp(code = cpp_code)
 # Quick default black hole test
 img_data <- render_bh_cpp_kerr()
 writeTIFF(img_data, "blackhole_default.tif", bits.per.sample = 16)
+
+img_data <- render_bh_cpp_kerr(width=1920*2, height=1080*2)
+writeTIFF(img_data, "blackhole_default_x2.tif", bits.per.sample = 16)
 
 
 
