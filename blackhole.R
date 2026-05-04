@@ -38,19 +38,19 @@ cpp_code <- "
 
 using namespace Rcpp;
 
-// Helper: Vector cross product
+// Vector cross product
 inline void cross(const double a[3], const double b[3], double res[3]) {
     res[0] = a[1]*b[2] - a[2]*b[1];
     res[1] = a[2]*b[0] - a[0]*b[2];
     res[2] = a[0]*b[1] - a[1]*b[0];
 }
 
-// Helper: Vector dot product
+// Vector dot product
 inline double dot(const double a[3], const double b[3]) {
     return a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
 }
 
-// Helper: Normalize vector
+// Normalize vector
 inline void normalize(double v[3]) {
     double len = std::sqrt(dot(v, v));
     if (len > 0) { v[0]/=len; v[1]/=len; v[2]/=len; }
