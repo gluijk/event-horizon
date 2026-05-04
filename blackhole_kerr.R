@@ -260,9 +260,6 @@ sourceCpp(code = cpp_code)
 img_data <- render_bh_cpp_kerr()
 writeTIFF(img_data, "blackhole_default.tif", bits.per.sample = 16)
 
-img_data <- render_bh_cpp_kerr(width=1920*2, height=1080*2)
-writeTIFF(img_data, "blackhole_default_x2.tif", bits.per.sample = 16)
-
 
 
 ##############################
