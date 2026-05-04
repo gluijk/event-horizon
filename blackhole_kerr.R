@@ -65,7 +65,8 @@ inline double sgn(double val) {
 NumericVector render_bh_cpp_kerr(
         int width=1920, int height=1080,                                    // output resolution in pixels
         double cam_dist=50, double cam_elev=0.075, double FOV_scale = 0.6,  // camera parameters
-        double a_star=0.0, double M=1.0, double r_out_accretion = 20.0,     // black hole parameters
+        double a_star=0.0, double M=1.0,                                    // black hole parameters
+        double r_in_accretion = -1.0, double r_out_accretion = 20.0,        // accretion disk parameters
         int glow=1, int rings=1, int AA=1) {                                // plot parameters
 
     // cam_dist: camera distance in M units
@@ -99,22 +100,34 @@ NumericVector render_bh_cpp_kerr(
     // Calculate Event horizon
     double r_H = M + std::sqrt(std::max(0.0, M*M - a*a));  // independent of the sign of a
 
-    // Calculate ISCO for Kerr (formula by Bardeen et al, 1972)
-    // if a=0 (Schwarzschild) -> Z1=3, Z2=3, r_ISCO=6
-    double Z1 = 1.0 + std::pow(1.0 - a*a/(M*M), 1.0/3.0) * (std::pow(1.0 + a/M, 1.0/3.0) + std::pow(1.0 - a/M, 1.0/3.0));
-    double Z2 = std::sqrt(3.0 * a*a/(M*M) + Z1*Z1);
-    double r_ISCO = M * (3.0 + Z2 - sgn(a) * std::sqrt((3.0 - Z1)*(3.0 + Z1 + 2.0*Z2)));  // sgn(a) accounts for prograde/retrograde
+    // Calculate inner accretion disk radius
+    double r_ISCO;
+    if (r_in_accretion == -1.0) {
+        // Calculate ISCO for Kerr (formula by Bardeen et al, 1972)
+        // If a=0 (Schwarzschild) -> Z1=3, Z2=3, r_ISCO=6
+        double Z1 = 1.0 + std::pow(1.0 - a*a/(M*M), 1.0/3.0) * (std::pow(1.0 + a/M, 1.0/3.0) + std::pow(1.0 - a/M, 1.0/3.0));
+        double Z2 = std::sqrt(3.0 * a*a/(M*M) + Z1*Z1);
+        r_ISCO = M * (3.0 + Z2 - sgn(a) * std::sqrt((3.0 - Z1)*(3.0 + Z1 + 2.0*Z2)));  // sgn(a) accounts for prograde/retrograde
+    } else {
+        r_ISCO = r_in_accretion;  // user provided inner accretion disk radius (r_ISCO is not calculated)
+    }
 
     // Display main black hole parameters and radius
-    const char* label = (a == 0) 
+    const char* label_blackhole = (a == 0) 
         ? \"Schwarzschild black hole: \" 
         : \"Kerr black hole: \";
-    Rcpp::Rcout << label
+
+    const char* label_accretion = (r_in_accretion == -1.0) 
+        ? \"r_ISCO\" 
+        : \"r_in_accr\";
+
+    Rcpp::Rcout << label_blackhole
                 << \"M=\" << M
                 << \", a*=\" << a_star
                 << \" -> a=\" << a
                 << \", r_H=\" << r_H
-                << \", r_ISCO=\" << r_ISCO
+                << \", \" << label_accretion << \"=\" << r_ISCO
+                << \", r_out_accr=\" << r_out_accretion
                 << std::endl;
 
     double aspect_ratio = (double)width / (double)height;
@@ -256,9 +269,25 @@ cat("Compiling C++ raytracer...\n")
 sourceCpp(code = cpp_code)
 
 
-# Quick default black hole test
+# Default black hole test
 img_data <- render_bh_cpp_kerr()
 writeTIFF(img_data, "blackhole_default.tif", bits.per.sample = 16)
+
+# Double Negative Visual Effects black hole example
+img_data <- render_bh_cpp_kerr(a_star=-0.999, r_in_accretion=9.26, r_out_accretion=18.70, cam_dist = 74.1, cam_elev = pi/2-1.511, FOV_scale=0.35)
+writeTIFF(img_data, "blackhole_dnve.tif", bits.per.sample = 16)
+
+# Double Negative Visual Effects black hole example
+img_data <- render_bh_cpp_kerr(a_star=0.999, r_in_accretion=9.26, r_out_accretion=18.70, cam_dist = 74.1, cam_elev = pi/2-1.511, FOV_scale=0.35)
+writeTIFF(img_data, "blackhole_dnve2.tif", bits.per.sample = 16)
+
+# Double Negative Visual Effects black hole example
+img_data <- render_bh_cpp_kerr(a_star=-0.6, r_in_accretion=9.26, r_out_accretion=18.70, cam_dist = 74.1, cam_elev = pi/2-1.511, FOV_scale=0.35)
+writeTIFF(img_data, "blackhole_gargantua.tif", bits.per.sample = 16)
+
+# Double Negative Visual Effects black hole example
+img_data <- render_bh_cpp_kerr(a_star=0.6, r_in_accretion=9.26, r_out_accretion=18.70, cam_dist = 74.1, cam_elev = pi/2-1.511, FOV_scale=0.35)
+writeTIFF(img_data, "blackhole_gargantua2.tif", bits.per.sample = 16)
 
 
 
