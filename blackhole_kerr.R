@@ -7,6 +7,8 @@
 # History of first black hole simulation:
 #   https://astrobitos.org/2019/05/02/la-historia-detras-la-primera-imagen-simulada-de-un-agujero-negro/
 #   https://www.cnrs.fr/en/press/first-ever-image-black-hole-cnrs-researcher-had-simulated-it-early-1979
+# Beautiful black hole images:
+#   https://rantonels.github.io/starless/
 # Realtime Javascript black hole raytracer:
 #   https://adriwin06.github.io/black-hole/
 
