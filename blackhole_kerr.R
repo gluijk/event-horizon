@@ -32,7 +32,7 @@ library(Rcpp)
 
 # BASIC RAYTRACER + KERR BLACK HOLE APPROX + AA: render_bh_cpp_kerr()
 # ChatGPT verdict: this is a visually plausible renderer, not a physically accurate Kerr ray tracer
-cpp_code <- "
+cpp_code <- '
 #include <Rcpp.h>
 #include <cmath>
 #include <algorithm>
@@ -73,7 +73,7 @@ NumericVector render_bh_cpp_kerr(
 
     // cam_dist: camera distance in M units
     // cam_elev: camera elevation in radians
-    // FOV_scale: viewport's physical full height relative to a focal length of 1
+    // FOV_scale: viewport physical full height relative to a focal length of 1
     //            VFOV = 2 * atan(0.6 / 2) ~33.4º / HFOV = 2 * atan(0.6 * aspect_ratio / 2)
     // a_star: user input spin parameter is assumed to be normalized a* in the {-1,+1} dimensionless range
     //         while the formulas are referred to a in the {−M,+M} units range
@@ -116,20 +116,20 @@ NumericVector render_bh_cpp_kerr(
 
     // Display main black hole parameters and radius
     const char* label_blackhole = (a == 0) 
-        ? \"Schwarzschild black hole: \" 
-        : \"Kerr black hole: \";
+        ? "Schwarzschild black hole: " 
+        : "Kerr black hole: ";
 
     const char* label_accretion = (r_in_accretion == -1.0) 
-        ? \"r_ISCO\" 
-        : \"r_in_accr\";
+        ? "r_ISCO" 
+        : "r_in_accr";
 
     Rcpp::Rcout << label_blackhole
-                << \"M=\" << M
-                << \", a*=\" << a_star
-                << \" -> a=\" << a
-                << \", r_H=\" << r_H
-                << \", \" << label_accretion << \"=\" << r_ISCO
-                << \", r_out_accr=\" << r_out_accretion
+                << "M=" << M
+                << ", a*=" << a_star
+                << " -> a=" << a
+                << ", r_H=" << r_H
+                << ", " << label_accretion << "=" << r_ISCO
+                << ", r_out_accr=" << r_out_accretion
                 << std::endl;
 
     double aspect_ratio = (double)width / (double)height;
@@ -225,7 +225,7 @@ NumericVector render_bh_cpp_kerr(
                     z_prev = pos[2];
                     
                     // --- GEODESIC INTEGRATION ---
-                    // Schwarzschild-ish approximation -> photon ring doesn't adapt to spin (a)
+                    // Schwarzschild-ish approximation -> photon ring doesnt adapt to spin (a)
                     // so the unstable photon orbit is still effectively at r_ph~3
                     double L[3];
                     cross(pos, vel, L);
@@ -252,7 +252,7 @@ NumericVector render_bh_cpp_kerr(
                 col_acc[2] += color[2];
             }
 
-            // Map 1D C++ array to match R's 3D array layout for easy rendering
+            // Map 1D C++ array to match Rs 3D array layout for easy rendering
             img[j + height * i + height * width * 0] = col_acc[0] / AA;
             img[j + height * i + height * width * 1] = col_acc[1] / AA;
             img[j + height * i + height * width * 2] = col_acc[2] / AA;
@@ -260,10 +260,10 @@ NumericVector render_bh_cpp_kerr(
     }
     
     // Set R array dimensions [height, width, channels]
-    img.attr(\"dim\") = IntegerVector::create(height, width, 3);
+    img.attr("dim") = IntegerVector::create(height, width, 3);
     return img;
 }
-"
+'
 
 
 # 2. Compile the C++ function
@@ -273,7 +273,11 @@ sourceCpp(code = cpp_code)
 
 # Default black hole test
 img_data <- render_bh_cpp_kerr()
-writeTIFF(img_data, "blackhole_default.tif", bits.per.sample = 16)
+writeTIFF(img_data, "blackhole_defaultlite.tif", bits.per.sample = 16)
+
+# Nice black hole
+img_data <- render_bh_cpp_kerr(width=1920*2/8*2, height=1080*2/8, rings=0, glow=0, r_out_accretion = 30, cam_elev = 0.04, M=1)
+writeTIFF(img_data, "blackhole_defaultlite.tif", bits.per.sample = 16)
 
 # Double Negative Visual Effects black hole example
 img_data <- render_bh_cpp_kerr(a_star=-0.999, r_in_accretion=9.26, r_out_accretion=18.70, cam_dist = 74.1, cam_elev = pi/2-1.511, FOV_scale=0.35)
