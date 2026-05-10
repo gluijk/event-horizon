@@ -66,10 +66,13 @@ inline double sgn(double val) {
 // [[Rcpp::export]]
 NumericVector render_bh_cpp_kerr(
         int width=1920, int height=1080,                                    // output resolution in pixels
-        double cam_dist=50, double cam_elev=0.075, double FOV_scale = 0.6,  // camera parameters
+        double cam_dist=50, double cam_elev=0.075, double FOV_scale=0.6,    // camera parameters
         double a_star=0.0, double M=1.0,                                    // black hole parameters
-        double r_in_accretion = -1.0, double r_out_accretion = 20.0,        // accretion disk parameters
-        int glow=1, int rings=1, int AA=1) {                                // plot parameters
+        double r_in_accretion=-1.0, double r_out_accretion=20.0,            // accretion disk parameters
+        int glow=1,                                                         // colour palette
+        int rings=1, double ring_spacing=1.0, double ring_width=0.1,        // cosmetic rings/sectors on accretion disk
+        int n_sectors = 0, double dim_factor=0.6, 
+        int AA=1) {                                                         // antialiasing
 
     // cam_dist: camera distance in M units
     // cam_elev: camera elevation in radians
@@ -82,6 +85,7 @@ NumericVector render_bh_cpp_kerr(
     // r_out_accretion: size of outer radius for accretion disk in length units
     // glow: boolean to choose colour palette
     // rings: boolean to add rings on the accretion disk
+    // n_sectors: number of sector (even recommended) to display in the accretion disk
     // AA: number of antialiasing pixels (AA=1 means no antialiasing)
 
     double a = a_star * M;  // scaling to give a units of M (length) which all used formulas expect
@@ -115,9 +119,10 @@ NumericVector render_bh_cpp_kerr(
     }
 
     // Display main black hole parameters and radius
-    const char* label_blackhole = (a == 0) 
-        ? "Schwarzschild black hole: " 
-        : "Kerr black hole: ";
+    const char* label_blackhole =
+        (a > 0) ? "Kerr prograde black hole: "
+      : (a < 0) ? "Kerr retrograde black hole: "
+                : "Schwarzschild black hole: ";
 
     const char* label_accretion = (r_in_accretion == -1.0) 
         ? "r_ISCO" 
@@ -138,6 +143,9 @@ NumericVector render_bh_cpp_kerr(
     double right[3] = {1.0, 0.0, 0.0};
     double up[3];
     cross(right, cdir, up);
+
+    double sector_width;
+    if (n_sectors) sector_width = 2.0 * M_PI / n_sectors;
 
     for (int j = 0; j < height; ++j) {
         for (int i = 0; i < width; ++i) {
@@ -200,6 +208,7 @@ NumericVector render_bh_cpp_kerr(
                             double red_grav = std::sqrt(delta / sigma);
                             g *= red_grav;
                             
+                            // Colour palette
                             if (glow) {  // orangish colours
                                 double base_I = 150.0 / (hit_r * hit_r);  // 1/r2 law
                                 double I_obs = base_I * std::pow(g, 4.0);
@@ -214,10 +223,28 @@ NumericVector render_bh_cpp_kerr(
                                 color[2] = std::pow(std::min(1.0, I_obs * std::pow(g, 4.0)), 0.5);
                             }
     
-                            // Optional: add grid rings for depth texture
-                            if (rings && std::fmod(hit_r, 1) < 0.1) {  // frequency, pulse width
-                                color[0] *= 0.3; color[1] *= 0.3; color[2] *= 0.3;
+                            // Optional: add rings to accretion disk
+                            if (rings && std::fmod(hit_r, ring_spacing) <= ring_width) {
+                                color[0] *= dim_factor; color[1] *= dim_factor; color[2] *= dim_factor;
                             }
+
+                            // Optional: add radial sectors to accretion disk
+                            if (n_sectors){
+                                // Disk lies in XY plane, black hole at (0,0,0), rotation axis is Z
+                                // (hit_x, hit_y) are already in the correct plane
+                                double phi = std::atan2(hit_y, hit_x);
+                                phi -= sector_width / 2.0;  // offset by half sector radians
+                                if (phi < 0) phi += 2.0 * M_PI;
+                                int sector = static_cast<int>(std::floor(phi / sector_width));
+                                if (sector % 2) {
+                                    color[0] *= dim_factor; color[1] *= dim_factor; color[2] *= dim_factor;
+                                }
+                            }
+
+                            // Optional: subtle dusty Grain (high-frequency noise)
+                            // double grain = 0.9 + 0.2 * std::fmod(std::sin(hit_x * 10.0 + hit_y * 15.0) * 43758.5453, 1.0);
+                            // color[0] *= grain; color[1] *= grain; color[2] *= grain;
+
                             break;  // stop tracking photon after it hits the opaque disk
                         }
                     }
@@ -266,34 +293,56 @@ NumericVector render_bh_cpp_kerr(
 '
 
 
+# Try additional possibilities:
+
+# 1. Azimuthal bands (instead of radial rings):
+# if (std::fmod(phi, 2.0 * M_PI / n_sectors) < M_PI / n_sectors)
+#         
+# 2. Spirals (more interesting physically)
+# if (std::fmod(hit_r + k * phi, ring_spacing) < ring_width)
+#     
+# 3. Doppler-aware textures
+# double phi_rot = phi + omega * t; // if animating
+# 
+# 4. Continuous shading instead of hard bands
+# double pattern = 0.5 + 0.5 * std::sin(2.0 * M_PI * hit_r / ring_spacing);
+# double pattern = 0.5 + 0.5 * std::sin(n * phi);  // angular
+# 
+# rings → function of r
+# sectors → function of φ
+# spirals → function of r + kφ
+
+
+
+
 # 2. Compile the C++ function
 cat("Compiling C++ raytracer...\n")
 sourceCpp(code = cpp_code)
 
 
-# Default black hole test
+
+# Default black hole
 img_data <- render_bh_cpp_kerr()
-writeTIFF(img_data, "blackhole_defaultlite.tif", bits.per.sample = 16)
+writeTIFF(img_data, "blackhole_default.tif", bits.per.sample = 16)
+
+# Sectors black hole
+img_data <- render_bh_cpp_kerr(rings = 0, n_sectors = 12)
+writeTIFF(img_data, "blackhole_sectors.tif", bits.per.sample = 16)
+
+# Gargantua Bermudez black hole
+img_data <- render_bh_cpp_kerr(ring_width = 1*0.8, ring_spacing = 1, width=1920*3/4/8*16, height=1080/6/2/2/2*16, ring_factor=0,
+                               M=1, r_out_accretion = 50, FOV_scale = 0.4, glow=0, cam_dist = 60, cam_elev = 0.25*pi/180)
+writeTIFF(img_data, "blackhole_gargantua.tif", bits.per.sample = 16)
+
+# Kip Thorne's book black hole
+img_data <- render_bh_cpp_kerr(ring_width = 1*0.15, ring_spacing = 1, width=1920*4*1.26, height=1080*4, ring_factor=0.7,
+                               M=1, r_out_accretion = 15, FOV_scale = 0.3*1.8, glow=0, cam_dist = 32.5, cam_elev = 3*pi/180,
+                               a=-0.7, n_sectors=12)
+writeTIFF(img_data, "blackhole_kipthorne.tif", bits.per.sample = 16)
 
 # Nice black hole
 img_data <- render_bh_cpp_kerr(width=1920*2/8*2, height=1080*2/8, rings=0, glow=0, r_out_accretion = 30, cam_elev = 0.04, M=1)
-writeTIFF(img_data, "blackhole_defaultlite.tif", bits.per.sample = 16)
-
-# Double Negative Visual Effects black hole example
-img_data <- render_bh_cpp_kerr(a_star=-0.999, r_in_accretion=9.26, r_out_accretion=18.70, cam_dist = 74.1, cam_elev = pi/2-1.511, FOV_scale=0.35)
-writeTIFF(img_data, "blackhole_dnve.tif", bits.per.sample = 16)
-
-# Double Negative Visual Effects black hole example
-img_data <- render_bh_cpp_kerr(a_star=0.999, r_in_accretion=9.26, r_out_accretion=18.70, cam_dist = 74.1, cam_elev = pi/2-1.511, FOV_scale=0.35)
-writeTIFF(img_data, "blackhole_dnve2.tif", bits.per.sample = 16)
-
-# Double Negative Visual Effects black hole example
-img_data <- render_bh_cpp_kerr(a_star=-0.6, r_in_accretion=9.26, r_out_accretion=18.70, cam_dist = 74.1, cam_elev = pi/2-1.511, FOV_scale=0.35)
-writeTIFF(img_data, "blackhole_gargantua.tif", bits.per.sample = 16)
-
-# Double Negative Visual Effects black hole example
-img_data <- render_bh_cpp_kerr(a_star=0.6, r_in_accretion=9.26, r_out_accretion=18.70, cam_dist = 74.1, cam_elev = pi/2-1.511, FOV_scale=0.35)
-writeTIFF(img_data, "blackhole_gargantua2.tif", bits.per.sample = 16)
+writeTIFF(img_data, "blackhole_nice.tif", bits.per.sample = 16)
 
 
 
