@@ -85,7 +85,7 @@ NumericVector render_bh_cpp_kerr(
     // r_out_accretion: size of outer radius for accretion disk in length units
     // glow: boolean to choose colour palette
     // rings: boolean to add rings on the accretion disk
-    // n_sectors: number of sector (even recommended) to display in the accretion disk
+    // n_sectors: number of sectors (even recommended) to display in the accretion disk
     // AA: number of antialiasing pixels (AA=1 means no antialiasing)
 
     double a = a_star * M;  // scaling to give a units of M (length) which all used formulas expect
