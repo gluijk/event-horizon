@@ -329,10 +329,9 @@ writeTIFF(img_data, "blackhole_default.tif", bits.per.sample = 16)
 img_data <- render_bh_cpp_kerr(rings = 0, n_sectors = 12)
 writeTIFF(img_data, "blackhole_sectors.tif", bits.per.sample = 16)
 
-# Gargantua Bermudez black hole
-img_data <- render_bh_cpp_kerr(ring_width = 1*0.8, ring_spacing = 1, width=1920*3/4/8*16, height=1080/6/2/2/2*16, ring_factor=0,
-                               M=1, r_out_accretion = 50, FOV_scale = 0.4, glow=0, cam_dist = 60, cam_elev = 0.25*pi/180)
-writeTIFF(img_data, "blackhole_gargantua.tif", bits.per.sample = 16)
+# Nice black hole
+img_data <- render_bh_cpp_kerr(width=1920*2*2, height=1080*2, rings=0, glow=0, r_out_accretion = 30, cam_elev = 0.04, M=1)
+writeTIFF(img_data, "blackhole_nice.tif", bits.per.sample = 16)
 
 # Kip Thorne's book black hole
 img_data <- render_bh_cpp_kerr(ring_width = 1*0.15, ring_spacing = 1, width=1920*4*1.26, height=1080*4, ring_factor=0.7,
@@ -340,9 +339,11 @@ img_data <- render_bh_cpp_kerr(ring_width = 1*0.15, ring_spacing = 1, width=1920
                                a=-0.7, n_sectors=12)
 writeTIFF(img_data, "blackhole_kipthorne.tif", bits.per.sample = 16)
 
-# Nice black hole
-img_data <- render_bh_cpp_kerr(width=1920*2/8*2, height=1080*2/8, rings=0, glow=0, r_out_accretion = 30, cam_elev = 0.04, M=1)
-writeTIFF(img_data, "blackhole_nice.tif", bits.per.sample = 16)
+# Gargantua Bermudez black hole
+img_data <- render_bh_cpp_kerr(ring_width = 1*0.8, ring_spacing = 1, width=1920*3/4/8*16, height=1080/6/2/2/2*16, ring_factor=0,
+                               M=1, r_out_accretion = 50, FOV_scale = 0.4, glow=0, cam_dist = 60, cam_elev = 0.25*pi/180)
+writeTIFF(img_data, "blackhole_gargantua.tif", bits.per.sample = 16)
+
 
 
 
