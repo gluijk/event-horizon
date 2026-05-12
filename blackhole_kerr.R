@@ -186,7 +186,7 @@ NumericVector render_bh_cpp_kerr(
                     // When using cam_elev=0 (looking at the accretion disk from the edge):
                     //   if height is an even number (e.g. 1080), the accretion disk wont be visible
                     //   if height is an odd  number (e.g. 1081), the middle pixel j=540 would centre perfectly on 0.5
-                    //   and a 1-pixel line will appear
+                    //   and a 1-pixel line will appear as the accretion disk
                     if (pos[2] * z_prev <= 0 && step > 0) {  // sign change in z: the ray has passed through z = 0
                         double t = std::abs(z_prev) / (std::abs(z_prev) + std::abs(pos[2]) + 1e-8);
                         // NOTE: hit_x, hit_y and hit_r are coming from the crossing point between
