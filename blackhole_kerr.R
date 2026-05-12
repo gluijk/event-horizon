@@ -183,6 +183,10 @@ NumericVector render_bh_cpp_kerr(
                     if (r < r_H * 1.01) break;  // early stop 1% safety margin near event horizon (visually indistinguishable)
                     if (r > cam_dist * 2.0) break;  // 2.0 factor to give up on a photon that is flying away into deep space
                     
+                    // When using cam_elev=0 (looking at the accretion disk from the edge):
+                    //   if height is an even number (e.g. 1080), the accretion disk wont be visible
+                    //   if height is an odd  number (e.g. 1081), the middle pixel j=540 would centre perfectly on 0.5
+                    //   and a 1-pixel line will appear
                     if (pos[2] * z_prev <= 0 && step > 0) {  // sign change in z: the ray has passed through z = 0
                         double t = std::abs(z_prev) / (std::abs(z_prev) + std::abs(pos[2]) + 1e-8);
                         // NOTE: hit_x, hit_y and hit_r are coming from the crossing point between
@@ -322,8 +326,8 @@ sourceCpp(code = cpp_code)
 
 
 # Default black hole
-img_data <- render_bh_cpp_kerr()
-writeTIFF(img_data, "blackhole_default.tif", bits.per.sample = 16)
+img_data <- render_bh_cpp_kerr(height=1081, cam_elev = 0)
+writeTIFF(img_data, "blackhole_default_EDGE.tif", bits.per.sample = 16)
 
 # Sectors black hole
 img_data <- render_bh_cpp_kerr(rings = 0, n_sectors = 12)
