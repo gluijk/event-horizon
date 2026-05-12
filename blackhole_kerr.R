@@ -213,12 +213,36 @@ NumericVector render_bh_cpp_kerr(
                             g *= red_grav;
                             
                             // Colour palette
-                            if (glow) {  // orangish colours
+                            if (glow == 1) {  // orangish colours
                                 double base_I = 150.0 / (hit_r * hit_r);  // 1/r2 law
                                 double I_obs = base_I * std::pow(g, 4.0);
-                                color[0] = std::min(1.0, I_obs * 1.0 * std::pow(g, 1.5)); // Red
-                                color[1] = std::min(1.0, I_obs * 0.6 * std::pow(g, 3.0)); // Green
-                                color[2] = std::min(1.0, I_obs * 0.2 * std::pow(g, 4.5)); // Blue
+                                color[0] = std::min(1.0, I_obs * 1.0 * std::pow(g, 1.5)); // red
+                                color[1] = std::min(1.0, I_obs * 0.6 * std::pow(g, 3.0)); // green
+                                color[2] = std::min(1.0, I_obs * 0.2 * std::pow(g, 4.5)); // blue
+                            } else if (glow == 2) {
+                                // Define the outer boundary where the disk is effectively invisible.
+                                // double R_disk = 20.0; 
+                                // Safety check to ensure we dont apply fade beyond the disk boundary.
+                                // If the hit_r is beyond R_disk, fade will handle it (becomes negative or capped).
+                                // A linear normalized distance: 1.0 at center, 0.0 at R_disk.
+                                // double normalized_d = 1.0 - (hit_r / R_disk);
+                                double normalized_d = 1.0 - (hit_r / r_out_accretion);
+
+                                // Apply exponential decay for progressive dimming.
+                                // Use std::pow(normalized_d, N). Higher N = steeper, softer edge.
+                                // A value of 3.0 to 4.0 provides a very progressive fade.
+                                double fade_multiplier = std::pow(std::max(0.0, normalized_d), 3.5);
+                                
+                                // Calculate intensity including the fade. 
+                                // We still use 1/r2 for the base, but it is now dominated by the fade.
+                                // (A higher exponent here may be needed if 1/r2 is too slow, but start with 2.0).
+                                double base_I = (150.0 / (hit_r * hit_r)) * fade_multiplier;
+                                double I_obs = base_I * std::pow(g, 4.0); // Doppler boost factor applied to Intensity
+
+                                // Apply a secondary color-specific gamma correct.
+                                color[0] = std::min(1.0, I_obs * 1.0 * std::pow(g, 1.5)); // red (g1.5 for red, higher g needed)
+                                color[1] = std::min(1.0, I_obs * 0.6 * std::pow(g, 3.0)); // green (g3.0 for green, higher g)
+                                color[2] = std::min(1.0, I_obs * 0.2 * std::pow(g, 4.5)); // blue (g4.5 for blue, higher g)
                             } else {  // bluish/orangish colours
                                 double base_I = 200.0 / (std::pow(hit_r, 3.0));  // 1/r3 law
                                 double I_obs = base_I * std::pow(g, 4.0);
@@ -337,7 +361,12 @@ writeTIFF(img_data, "blackhole_sectors.tif", bits.per.sample = 16)
 img_data <- render_bh_cpp_kerr(width=1920*2*2, height=1080*2, rings=0, glow=0, r_out_accretion = 30, cam_elev = 0.04, M=1)
 writeTIFF(img_data, "blackhole_nice.tif", bits.per.sample = 16)
 
-# Kip Thorne's book black hole
+# Luminet black hole
+img_data <- render_bh_cpp_kerr(glow=2, rings = 0, width=1920*2*1.2, height=1080*2, r_out_accretion=40, cam_elev = 0.075*2,
+                               FOV_scale = 0.6*1.2)
+writeTIFF(img_data, "blackhole_luminet.tif", bits.per.sample = 16)
+
+# Kip Thorne black hole
 img_data <- render_bh_cpp_kerr(ring_width = 1*0.15, ring_spacing = 1, width=1920*4*1.26, height=1080*4, dim_factor = 0.7,
                                M=1, r_out_accretion = 15, FOV_scale = 0.3*1.8, glow=0, cam_dist = 32.5, cam_elev = 3*pi/180,
                                a=-0.7, n_sectors=12)
@@ -353,6 +382,32 @@ img_data <- render_bh_cpp_kerr(height = 1081, cam_elev = 0)
 writeTIFF(img_data, "blackhole_edge.tif", bits.per.sample = 16)
 
 
+
+
+
+# Supongamos que 'img' es tu matriz de imagen normalizada de 0 a 1
+# Si no tienes una, aquí creamos una de ejemplo:
+# img <- matrix(runif(10000), nrow = 100, ncol = 100)
+
+convertir_a_binario_probabilistico <- function(img) {
+    # Generamos una matriz del mismo tamaño con valores aleatorios uniformes [0, 1]
+    ruido_uniforme <- matrix(runif(length(img)), nrow = nrow(img), ncol = ncol(img))
+    
+    # Si el valor original es mayor que el número aleatorio, el píxel será 1 (TRUE)
+    # de lo contrario será 0 (FALSE).
+    # - Un valor de 0.1 tiene un 10% de probabilidad de superar al aleatorio.
+    # - Un valor de 0.9 tiene un 90% de probabilidad.
+    # - 0 siempre será 0 (nunca es mayor que un valor positivo de runif).
+    # - 1 siempre será 1 (siempre es mayor o igual que runif).
+    img_binaria <- (img > ruido_uniforme)
+    
+    # Convertimos el resultado lógico (TRUE/FALSE) a numérico (1/0)
+    return(apply(img_binaria, 2, as.numeric))
+}
+
+img=readTIFF("monocromo.tif")
+img2=convertir_a_binario_probabilistico(img)
+writeTIFF(img2, "monocromo2.tif")
 
 
 ##############################
