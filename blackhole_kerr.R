@@ -82,7 +82,7 @@ NumericVector render_bh_cpp_kerr(
     //         while the formulas are referred to a in the {−M,+M} units range
     //         a* = a / M -> a = a* * M
     // M: black hole mass in length units
-    // r_out_accretion: size of outer radius for accretion disk in length units
+    // r_in_accretion, r_out_accretion: size of inner/outer radius for accretion disk in length units
     // glow: boolean to choose colour palette
     // rings: boolean to add rings on the accretion disk
     // n_sectors: number of sectors (even recommended) to display in the accretion disk
@@ -383,31 +383,25 @@ writeTIFF(img_data, "blackhole_edge.tif", bits.per.sample = 16)
 
 
 
-
-
-# Supongamos que 'img' es tu matriz de imagen normalizada de 0 a 1
-# Si no tienes una, aquí creamos una de ejemplo:
-# img <- matrix(runif(10000), nrow = 100, ncol = 100)
-
-convertir_a_binario_probabilistico <- function(img) {
-    # Generamos una matriz del mismo tamaño con valores aleatorios uniformes [0, 1]
-    ruido_uniforme <- matrix(runif(length(img)), nrow = nrow(img), ncol = ncol(img))
+# Luminet dithering
+dither <- function(img) {
+    # Generate a matrix of the same size with uniform random values between [0, 1]
+    uniform_noise <- matrix(runif(length(img)), nrow = nrow(img), ncol = ncol(img))
     
-    # Si el valor original es mayor que el número aleatorio, el píxel será 1 (TRUE)
-    # de lo contrario será 0 (FALSE).
-    # - Un valor de 0.1 tiene un 10% de probabilidad de superar al aleatorio.
-    # - Un valor de 0.9 tiene un 90% de probabilidad.
-    # - 0 siempre será 0 (nunca es mayor que un valor positivo de runif).
-    # - 1 siempre será 1 (siempre es mayor o igual que runif).
-    img_binaria <- (img > ruido_uniforme)
+    # If the original value is greater than the random number, the pixel becomes 1 (TRUE);
+    # otherwise, it becomes 0 (FALSE).
+    # - A value of 0.1 has a 10% probability of exceeding the random value
+    # - A value of 0.9 has a 90% probability
+    # - 0 will always be 0 (it is never greater than a positive value from runif)
+    # - 1 will always be 1 (it is always greater than or equal to runif)
+    img_binary <- (img > uniform_noise)
     
-    # Convertimos el resultado lógico (TRUE/FALSE) a numérico (1/0)
-    return(apply(img_binaria, 2, as.numeric))
+    # Convert the logical result (TRUE/FALSE) to numeric (1/0)
+    return(apply(img_binary, 2, as.numeric))
 }
 
-img=readTIFF("monocromo.tif")
-img2=convertir_a_binario_probabilistico(img)
-writeTIFF(img2, "monocromo2.tif")
+writeTIFF(dither(readTIFF("luminet_mono.tif")), "luminet_dithering.tif")
+
 
 
 ##############################
